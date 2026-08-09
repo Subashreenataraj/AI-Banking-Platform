@@ -1,0 +1,197 @@
+Build a real-world enterprise project called **AI Banking Regulatory Compliance & Audit Intelligence Platform**.
+
+The goal is NOT to build a generic chatbot or chat-with-PDF application.
+
+The system should help banking compliance teams analyze banking regulations against internal bank policies, identify compliance gaps, assess risk, generate audit findings, and create compliance actions.
+
+### Mandatory technologies
+
+* Python backend
+* LangChain
+* LangGraph
+* RAG
+* ChromaDB
+* OpenAI or Groq API
+* Multiple specialized AI agents
+* OpenAPI specification and OpenAPI-based tools
+* LangSmith for tracing and evaluation
+* Next.js + JavaScript frontend
+* Relational database for application data
+
+### Multi-agent architecture
+
+Create a LangGraph-based Supervisor Agent that routes requests to:
+
+1. Regulation Analysis Agent
+
+   * Understands regulatory requirements using RAG.
+
+2. Policy Verification Agent
+
+   * Compares regulatory requirements with internal bank policies.
+
+3. Risk Assessment Agent
+
+   * Identifies compliance risks and assigns LOW/MEDIUM/HIGH/CRITICAL severity.
+
+4. Audit Report Agent
+
+   * Generates structured audit findings and recommendations.
+
+The agents must actually execute real tasks. Do not create fake agent responses.
+
+### RAG
+
+Allow compliance officers to upload:
+
+* PDF
+* DOCX
+* TXT
+
+Example documents:
+
+* Banking regulations
+* KYC policies
+* AML policies
+* Customer data policies
+* Access-control policies
+* Previous audit reports
+
+Process documents through:
+
+Document → Text extraction → Chunking → Embeddings → ChromaDB → Retrieval → Agent
+
+Every compliance answer must show the source document and relevant evidence.
+
+If evidence cannot be found, the system must say that it cannot verify the requirement instead of hallucinating.
+
+### OpenAPI
+
+Create a real `openapi.yaml`.
+
+Expose business operations such as:
+
+* search regulations
+* retrieve policies
+* create compliance issue
+* update compliance issue
+* generate audit report
+* send compliance notification
+
+Agents should be able to call these tools when appropriate.
+
+Do not use OpenAPI only as Swagger documentation.
+
+### LangSmith
+
+Integrate LangSmith to trace:
+
+* Supervisor routing
+* Agent execution
+* RAG retrieval
+* LLM calls
+* Tool calls
+
+Also create basic evaluation examples for retrieval accuracy, answer correctness, source correctness, and agent routing.
+
+### Frontend
+
+Use Next.js + JavaScript.
+
+Do NOT use plain HTML/CSS as the application frontend.
+
+Create:
+
+1. Dashboard
+
+   * Compliance score
+   * Open issues
+   * High-risk issues
+   * Documents indexed
+   * Completed audits
+
+2. AI Compliance Assistant
+
+   * Chat interface
+   * Answer
+   * Compliance status
+   * Risk level
+   * Evidence
+   * Source documents
+   * Agents involved
+
+3. Document Management
+
+   * Upload documents
+   * View indexed documents
+   * Delete documents
+
+4. Compliance Issues
+
+   * Finding
+   * Regulation
+   * Risk
+   * Status
+   * Recommendation
+
+5. Audit Reports
+
+   * View generated reports
+   * Export/download
+
+6. Agent Activity
+
+   * Show the actual agent workflow and execution status.
+
+### Important
+
+Do not hardcode dashboard metrics.
+
+Do not fake RAG retrieval.
+
+Do not fake agent execution.
+
+Do not expose API keys in frontend code.
+
+Use environment variables and create `.env.example`.
+
+Use synthetic/demo regulatory documents for testing and clearly label them as synthetic.
+
+### Main demo workflow
+
+The final application must support:
+
+User uploads regulation
+↓
+Uploads internal bank policy
+↓
+Documents indexed in ChromaDB
+↓
+User asks:
+"Check whether our customer data access policy complies with this regulation."
+↓
+Supervisor Agent
+↓
+Regulation Analysis Agent
+↓
+Policy Verification Agent
+↓
+Risk Assessment Agent
+↓
+Audit Report Agent
+↓
+Compliance finding + evidence + recommendation
+↓
+User creates compliance issue
+↓
+OpenAPI tool creates issue
+↓
+Issue appears in dashboard
+↓
+LangSmith records the complete execution trace
+
+Build this as a modular, production-style project with a clean folder structure.
+
+Start with the **backend architecture, database, OpenAPI specification, document ingestion, ChromaDB RAG pipeline, and LangGraph agent architecture**.
+
+Do not build the entire frontend until the backend workflow is working.
