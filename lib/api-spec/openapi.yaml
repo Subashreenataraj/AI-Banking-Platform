@@ -2,35 +2,502 @@ openapi: 3.1.0
 info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
-  version: 0.1.0
-  description: API specification
+  version: 1.0.0
+  description: AI Banking Regulatory Compliance & Audit Intelligence Platform API
 servers:
   - url: /api
-    description: Base API path
+    description: Compliance API
 tags:
   - name: health
-    description: Health operations
+  - name: dashboard
+  - name: documents
+  - name: assistant
+  - name: issues
+  - name: reports
+  - name: notifications
+  - name: agents
+  - name: tools
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
-      summary: Health check
-      description: Returns server health status
+      summary: Health and capability check
       responses:
         "200":
           description: Healthy
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/HealthStatus"
+                $ref: "#/components/schemas/HealthResponse"
+  /dashboard:
+    get:
+      operationId: getDashboard
+      tags: [dashboard]
+      summary: Get live compliance dashboard metrics
+      responses:
+        "200":
+          description: Dashboard metrics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardResponse"
+  /documents:
+    get:
+      operationId: listDocuments
+      tags: [documents]
+      summary: List indexed documents
+      responses:
+        "200":
+          description: Indexed documents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Document"
+    post:
+      operationId: uploadDocument
+      tags: [documents]
+      summary: Upload and index a regulation, policy, audit, or other document
+      parameters:
+        - $ref: "#/components/parameters/Category"
+        - name: is_synthetic
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/DocumentUpload"
+      responses:
+        "201":
+          description: Indexed document
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Document"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /documents/{documentId}:
+    delete:
+      operationId: deleteDocument
+      tags: [documents]
+      summary: Delete an indexed document
+      parameters:
+        - $ref: "#/components/parameters/DocumentId"
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /assistant/analyze:
+    post:
+      operationId: analyzeCompliance
+      tags: [assistant]
+      summary: Run grounded multi-agent compliance analysis
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssistantRequest"
+      responses:
+        "200":
+          description: Grounded compliance result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssistantResponse"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "502":
+          description: Provider or workflow error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /runs:
+    get:
+      operationId: listAgentRuns
+      tags: [agents]
+      summary: List recent agent workflow runs
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        "200":
+          description: Agent runs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AgentRun"
+  /issues:
+    get:
+      operationId: listComplianceIssues
+      tags: [issues]
+      summary: List compliance issues
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Compliance issues
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ComplianceIssue"
+    post:
+      operationId: createComplianceIssue
+      tags: [issues]
+      summary: Create a compliance issue
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ComplianceIssueInput"
+      responses:
+        "201":
+          description: Created issue
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComplianceIssue"
+  /issues/{issueId}:
+    patch:
+      operationId: updateComplianceIssue
+      tags: [issues]
+      summary: Update a compliance issue
+      parameters:
+        - $ref: "#/components/parameters/IssueId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ComplianceIssueUpdate"
+      responses:
+        "200":
+          description: Updated issue
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComplianceIssue"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /reports:
+    get:
+      operationId: listAuditReports
+      tags: [reports]
+      summary: List generated audit reports
+      responses:
+        "200":
+          description: Audit reports
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditReport"
+    post:
+      operationId: generateAuditReport
+      tags: [reports]
+      summary: Generate and persist an audit report
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuditReportInput"
+      responses:
+        "201":
+          description: Generated audit report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditReport"
+  /notifications:
+    post:
+      operationId: sendComplianceNotification
+      tags: [notifications]
+      summary: Send and record a compliance notification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NotificationInput"
+      responses:
+        "201":
+          description: Notification record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notification"
+  /openapi-tools:
+    get:
+      operationId: listOpenApiTools
+      tags: [tools]
+      summary: List tools available to agents
+      responses:
+        "200":
+          description: Tool names
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [tools]
+                properties:
+                  tools:
+                    type: array
+                    items:
+                      type: string
 components:
+  parameters:
+    Category:
+      name: category
+      in: query
+      required: true
+      schema:
+        type: string
+        enum: [regulation, policy, audit, other]
+    DocumentId:
+      name: documentId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    IssueId:
+      name: issueId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Conflict:
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    UnprocessableEntity:
+      description: Unprocessable entity
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
   schemas:
-    HealthStatus:
+    ErrorResponse:
+      type: object
+      required: [detail]
+      properties:
+        detail:
+          type: string
+    HealthResponse:
+      type: object
+      required: [status, database, llm_configured, rag_ready]
+      properties:
+        status: { type: string }
+        database: { type: string }
+        llm_configured: { type: boolean }
+        rag_ready: { type: boolean }
+    DocumentUpload:
+      type: object
+      required: [file]
+      properties:
+        file:
+          type: string
+          format: binary
+    Document:
+      type: object
+      required: [id, name, document_type, category, status, chunk_count, is_synthetic, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        document_type: { type: string }
+        category: { type: string }
+        status: { type: string }
+        chunk_count: { type: integer }
+        is_synthetic: { type: boolean }
+        created_at: { type: string, format: date-time }
+        indexed_at: { type: ["string", "null"], format: date-time }
+    Evidence:
+      type: object
+      required: [document_name, excerpt, source_type]
+      properties:
+        document_id: { type: ["string", "null"], format: uuid }
+        document_name: { type: string }
+        excerpt: { type: string }
+        source_type: { type: string }
+        relevance_score: { type: ["number", "null"] }
+    ComplianceIssueInput:
+      type: object
+      required: [finding, regulation, risk, recommendation]
+      properties:
+        finding: { type: string }
+        regulation: { type: string }
+        risk:
+          type: string
+          enum: [LOW, MEDIUM, HIGH, CRITICAL]
+        recommendation: { type: string }
+        evidence:
+          type: array
+          items: { $ref: "#/components/schemas/Evidence" }
+        source_document_ids:
+          type: array
+          items: { type: string, format: uuid }
+    ComplianceIssueUpdate:
       type: object
       properties:
         status:
+          type: ["string", "null"]
+          enum: [OPEN, IN_REVIEW, REMEDIATED, ACCEPTED, null]
+        risk:
+          type: ["string", "null"]
+          enum: [LOW, MEDIUM, HIGH, CRITICAL, null]
+        recommendation: { type: ["string", "null"] }
+    ComplianceIssue:
+      allOf:
+        - $ref: "#/components/schemas/ComplianceIssueInput"
+        - type: object
+          required: [id, status, created_at, updated_at]
+          properties:
+            id: { type: string, format: uuid }
+            status: { type: string }
+            created_at: { type: string, format: date-time }
+            updated_at: { type: string, format: date-time }
+    AgentRun:
+      type: object
+      required: [id, thread_id, question, status, agents_involved, started_at]
+      properties:
+        id: { type: string, format: uuid }
+        thread_id: { type: string }
+        question: { type: string }
+        status: { type: string }
+        current_agent: { type: ["string", "null"] }
+        agents_involved:
+          type: array
+          items: { type: string }
+        trace_url: { type: ["string", "null"] }
+        result: { type: ["object", "null"] }
+        error: { type: ["string", "null"] }
+        started_at: { type: string, format: date-time }
+        completed_at: { type: ["string", "null"], format: date-time }
+    AssistantRequest:
+      type: object
+      required: [question]
+      properties:
+        question: { type: string, minLength: 10 }
+        regulation_document_id: { type: ["string", "null"], format: uuid }
+        policy_document_id: { type: ["string", "null"], format: uuid }
+    AssistantResponse:
+      type: object
+      required: [run, answer, compliance_status, risk_level, evidence, source_documents, agents_involved]
+      properties:
+        run: { $ref: "#/components/schemas/AgentRun" }
+        answer: { type: string }
+        compliance_status: { type: string }
+        risk_level:
           type: string
-      required:
-        - status
-
+          enum: [LOW, MEDIUM, HIGH, CRITICAL]
+        evidence:
+          type: array
+          items: { $ref: "#/components/schemas/Evidence" }
+        source_documents:
+          type: array
+          items: { $ref: "#/components/schemas/Document" }
+        agents_involved:
+          type: array
+          items: { type: string }
+    AuditReport:
+      type: object
+      required: [id, title, status, summary, findings, generated_by, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string }
+        status: { type: string }
+        summary: { type: string }
+        findings:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        generated_by: { type: string }
+        created_at: { type: string, format: date-time }
+    AuditReportInput:
+      type: object
+      required: [title, summary]
+      properties:
+        title: { type: string }
+        summary: { type: string }
+        findings:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        generated_by:
+          type: string
+          default: Audit Report Agent
+    NotificationInput:
+      type: object
+      required: [issue_id, message, recipient]
+      properties:
+        issue_id: { type: string, format: uuid }
+        message: { type: string }
+        recipient: { type: string }
+    Notification:
+      type: object
+      required: [id, issue_id, recipient, message, status, sent_at]
+      properties:
+        id: { type: string, format: uuid }
+        issue_id: { type: string, format: uuid }
+        recipient: { type: string }
+        message: { type: string }
+        status: { type: string }
+        sent_at: { type: string, format: date-time }
+    DashboardResponse:
+      type: object
+      required: [compliance_score, open_issues, high_risk_issues, documents_indexed, completed_audits, recent_runs]
+      properties:
+        compliance_score: { type: number }
+        open_issues: { type: integer }
+        high_risk_issues: { type: integer }
+        documents_indexed: { type: integer }
+        completed_audits: { type: integer }
+        recent_runs:
+          type: array
+          items: { $ref: "#/components/schemas/AgentRun" }

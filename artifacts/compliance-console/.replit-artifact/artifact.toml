@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "AI Banking Compliance Console"
+description = "A production-style compliance workspace for banking teams to upload regulatory documents, run grounded multi-agent analysis, review evidence-backed issues, and monitor audit intelligence."
+version = "1.0.0"
+id = "artifacts/compliance-console"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21767
+
+[services.development]
+run = "pnpm --filter @workspace/compliance-console run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/compliance-console", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/compliance-console/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21767"
+BASE_PATH = "/"

@@ -1,0 +1,2 @@
+- [Evidence deletion integrity](evidence-deletion-integrity.md) — deleting an indexed document must remove both relational metadata and its Chroma vectors.
+- [Compliance console builds](compliance-console-builds.md) — standalone Vite production builds require the artifact's managed PORT and BASE_PATH values.
