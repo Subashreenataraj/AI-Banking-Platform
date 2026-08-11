@@ -19,10 +19,15 @@ async def lifespan(_app: FastAPI):
 app = FastAPI(
     title="AI Banking Regulatory Compliance & Audit Intelligence Platform",
     version="1.0.0",
-    description="Grounded regulatory analysis, policy verification, risk assessment, and audit intelligence.",
+    description=(
+        "Grounded regulatory analysis, policy verification, "
+        "risk assessment, and audit intelligence."
+    ),
     lifespan=lifespan,
 )
+
 settings = get_settings()
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.origins,
@@ -30,4 +35,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.include_router(router, prefix="/api")
+
+app.include_router(
+    router,
+    prefix="/api",
+)

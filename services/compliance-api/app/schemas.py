@@ -6,8 +6,27 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 RiskLevel = Literal["LOW", "MEDIUM", "HIGH", "CRITICAL"]
-IssueStatus = Literal["OPEN", "IN_REVIEW", "REMEDIATED", "ACCEPTED"]
-DocumentStatus = Literal["UPLOADED", "INDEXING", "INDEXED", "FAILED"]
+
+IssueStatus = Literal[
+    "OPEN",
+    "IN_REVIEW",
+    "REMEDIATED",
+    "ACCEPTED",
+]
+
+DocumentStatus = Literal[
+    "UPLOADED",
+    "INDEXING",
+    "INDEXED",
+    "FAILED",
+]
+
+ComplianceStatus = Literal[
+    "COMPLIANT",
+    "PARTIALLY_COMPLIANT",
+    "NON_COMPLIANT",
+    "UNVERIFIED",
+]
 
 
 class HealthResponse(BaseModel):
@@ -32,8 +51,10 @@ class DocumentResponse(BaseModel):
 
 
 class Evidence(BaseModel):
+    chunk_id: UUID | None = None
     document_id: UUID | None = None
     document_name: str
+    page_number: int | None = None
     excerpt: str
     source_type: str
     relevance_score: float | None = None
@@ -56,7 +77,7 @@ class ComplianceIssueUpdate(BaseModel):
 
 class ComplianceIssueResponse(ComplianceIssueInput):
     id: UUID
-    status: str
+    status: IssueStatus
     created_at: datetime
     updated_at: datetime
 
@@ -109,6 +130,7 @@ class AgentRunResponse(BaseModel):
 
 class AssistantRequest(BaseModel):
     question: str = Field(min_length=10)
+
     regulation_document_id: UUID | None = None
     policy_document_id: UUID | None = None
 
@@ -116,10 +138,13 @@ class AssistantRequest(BaseModel):
 class AssistantResponse(BaseModel):
     run: AgentRunResponse
     answer: str
-    compliance_status: str
+
+    compliance_status: ComplianceStatus
     risk_level: RiskLevel
+
     evidence: list[Evidence]
     source_documents: list[DocumentResponse]
+
     agents_involved: list[str]
 
 

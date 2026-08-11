@@ -1,14 +1,13 @@
 [project]
-name = "repl-nix-workspace"
-version = "0.1.0"
-description = "Add your description here"
+name = "ai-banking-compliance"
+version = "1.0.0"
+description = "AI Banking Regulatory Compliance & Audit Intelligence Platform"
 requires-python = ">=3.13"
+
 dependencies = [
-    "chromadb==1.0.20",
     "fastapi==0.116.1",
     "httpx==0.28.1",
     "langchain==0.3.27",
-    "langchain-chroma==0.2.5",
     "langchain-openai==0.3.32",
     "langchain-text-splitters==0.3.9",
     "langgraph==0.6.6",

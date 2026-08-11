@@ -9,10 +9,16 @@ from .config import get_settings
 
 def get_engine() -> Engine:
     database_url = get_settings().database_url
+
     if database_url.startswith("postgres://"):
-        database_url = database_url.replace("postgres://", "postgresql+psycopg://", 1)
+        database_url = database_url.replace(
+            "postgres://", "postgresql+psycopg://", 1
+        )
     elif database_url.startswith("postgresql://"):
-        database_url = database_url.replace("postgresql://", "postgresql+psycopg://", 1)
+        database_url = database_url.replace(
+            "postgresql://", "postgresql+psycopg://", 1
+        )
+
     return create_engine(database_url, pool_pre_ping=True)
 
 
@@ -28,12 +34,16 @@ def connection() -> Generator:
 def run_migrations() -> None:
     statements = [
         """
+        CREATE EXTENSION IF NOT EXISTS vector
+        """,
+
+        """
         CREATE TABLE IF NOT EXISTS documents (
             id UUID PRIMARY KEY,
             name TEXT NOT NULL,
             document_type TEXT NOT NULL,
             category TEXT NOT NULL,
-            source_path TEXT NOT NULL,
+            source_path TEXT,
             content_hash TEXT NOT NULL UNIQUE,
             status TEXT NOT NULL DEFAULT 'uploaded',
             chunk_count INTEGER NOT NULL DEFAULT 0,
@@ -42,6 +52,33 @@ def run_migrations() -> None:
             indexed_at TIMESTAMPTZ
         )
         """,
+
+        """
+        CREATE TABLE IF NOT EXISTS document_chunks (
+            id UUID PRIMARY KEY,
+            document_id UUID NOT NULL
+                REFERENCES documents(id) ON DELETE CASCADE,
+            chunk_index INTEGER NOT NULL,
+            content TEXT NOT NULL,
+            page_number INTEGER,
+            embedding vector(1536),
+            metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+            UNIQUE(document_id, chunk_index)
+        )
+        """,
+
+        """
+        CREATE INDEX IF NOT EXISTS document_chunks_document_idx
+        ON document_chunks(document_id)
+        """,
+
+        """
+        CREATE INDEX IF NOT EXISTS document_chunks_embedding_idx
+        ON document_chunks
+        USING hnsw (embedding vector_cosine_ops)
+        """,
+
         """
         CREATE TABLE IF NOT EXISTS compliance_issues (
             id UUID PRIMARY KEY,
@@ -56,6 +93,7 @@ def run_migrations() -> None:
             updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
         )
         """,
+
         """
         CREATE TABLE IF NOT EXISTS audit_reports (
             id UUID PRIMARY KEY,
@@ -67,6 +105,7 @@ def run_migrations() -> None:
             created_at TIMESTAMPTZ NOT NULL DEFAULT now()
         )
         """,
+
         """
         CREATE TABLE IF NOT EXISTS agent_runs (
             id UUID PRIMARY KEY,
@@ -82,26 +121,40 @@ def run_migrations() -> None:
             completed_at TIMESTAMPTZ
         )
         """,
+
         """
         CREATE TABLE IF NOT EXISTS compliance_notifications (
             id UUID PRIMARY KEY,
-            issue_id UUID NOT NULL REFERENCES compliance_issues(id) ON DELETE CASCADE,
+            issue_id UUID NOT NULL
+                REFERENCES compliance_issues(id) ON DELETE CASCADE,
             recipient TEXT NOT NULL,
             message TEXT NOT NULL,
             status TEXT NOT NULL DEFAULT 'SENT',
             sent_at TIMESTAMPTZ NOT NULL DEFAULT now()
         )
         """,
+
         """
-        CREATE INDEX IF NOT EXISTS documents_status_idx ON documents(status)
+        CREATE INDEX IF NOT EXISTS documents_status_idx
+        ON documents(status)
         """,
+
         """
-        CREATE INDEX IF NOT EXISTS compliance_issues_risk_idx ON compliance_issues(risk)
+        CREATE INDEX IF NOT EXISTS documents_category_idx
+        ON documents(category)
         """,
+
         """
-        CREATE INDEX IF NOT EXISTS agent_runs_started_at_idx ON agent_runs(started_at DESC)
+        CREATE INDEX IF NOT EXISTS compliance_issues_risk_idx
+        ON compliance_issues(risk)
+        """,
+
+        """
+        CREATE INDEX IF NOT EXISTS agent_runs_started_at_idx
+        ON agent_runs(started_at DESC)
         """,
     ]
+
     with connection() as conn:
         for statement in statements:
             conn.execute(text(statement))
